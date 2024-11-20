@@ -28,7 +28,6 @@ def laplacian_contrast_weight(img: np.ndarray):
 
 
 def saliency_weight(img: np.ndarray):
-    # this is rly fckin cool but doesnt work properly
     assert img.ndim == 3 and img.dtype == np.uint8 and 1 <= np.max(img) <= 255
 
     img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
@@ -39,20 +38,22 @@ def saliency_weight(img: np.ndarray):
     binomial_kernel_1d /= binomial_kernel_1d.sum()
     img_blurred = cv2.sepFilter2D(img_lab, -1, binomial_kernel_1d, binomial_kernel_1d)
 
-    diff = cv2.subtract(img_blurred, mean_image_feature_vector)
-    W_Sal = np.sqrt(np.sum(diff ** 2, axis=2))
+    diff = np.subtract(img_blurred, mean_image_feature_vector)
+    W_Sal = cv2.sqrt(np.sum(diff ** 2, axis=2))
 
-    # return cv2.normalize(W_Sal, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)
-    return cv2.normalize(W_Sal.astype(np.uint8), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+    # return cv2.normalize(W_Sal.astype(np.uint8), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+    return W_Sal.astype(np.uint8)
 
 
 def saturation_weight(img: np.ndarray):
     """
     W_Sat = √( (1/3) * [(R_k − L_k )^2 +(G_k − L_k )^2 +(B_k − L_k )^2])
-    :param img: BGR input image (float32)
+    :param img: BGR input image
     :return: Saturation weight map
     """
     assert img.ndim == 3 and img.dtype == np.uint8 and 1 <= np.max(img) <= 255
+
+    img = img.astype(np.float32) / 255.0
 
     img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
     L = img_lab[:, :, 0] / 255.0
@@ -64,7 +65,7 @@ def saturation_weight(img: np.ndarray):
     B = B.astype(np.float32)
 
     W_Sat = cv2.sqrt(
-        (1 / 3) * ((R - L) ** 2 + (G - L) ** 2 + (B - L) ** 2)
+        ((R - L) ** 2 + (G - L) ** 2 + (B - L) ** 2) / 3.0
     )
 
     W_Sat = cv2.normalize(W_Sat, None, 0.0, 1.0, cv2.NORM_MINMAX, cv2.CV_32F)

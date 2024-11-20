@@ -4,8 +4,7 @@ import cv2
 from methods.wb_comps import *
 from methods.gamma_comps import *
 from methods.weight_maps import *
-
-# from methods.sharpening import *
+from methods.sharpening import *
 # from methods.fusion import *
 
 img_original = cv2.imread('images/buvar.jpg', cv2.IMREAD_COLOR)
@@ -27,12 +26,12 @@ Input 1 (Gamma Correction) and its weight maps for the eventual Multi-Scale Fusi
 input1 = gamma_correction(img_wb, 2.5)
 input1_laplacian_wm = get_weight_map(input1, method=WeightMapMethods.LAPLACIAN)
 input1_saliency_wm = get_weight_map(input1, method=WeightMapMethods.SALIENCY)
-# input1_saturation_wm = get_weight_map(input1, method=WeightMapMethods.SATURATION)
+input1_saturation_wm = get_weight_map(input1, method=WeightMapMethods.SATURATION)
 
 """
 Input 2 (Normalized Unsharp Masking) and its weight maps for the eventual Multi-Scale Fusion process
 """
-# input2 = (img_wb)
+input2 = norm_unsharp_mask_matlab(img_wb)
 # input2_laplacian_wm = get_weight_map(input2, method=WeightMapMethods.LAPLACIAN)
 # input2_saliency_wm = get_weight_map(input2, method=WeightMapMethods.SALIENCY)
 # input2_saturation_wm = get_weight_map(input2, method=WeightMapMethods.SATURATION)
@@ -75,11 +74,10 @@ Images to display
 
 # cv2.imshow('Input1 (Gamma)', input1)
 # cv2.imshow('Laplacian Contrast Weight (Input1)', input1_laplacian_wm)
-cv2.imshow('Saliency Weight (Input1)', input1_saliency_wm)
-cv2.imwrite("images/results/sal.jpg", input1_saliency_wm)
+# cv2.imshow('Saliency Weight (Input1)', input1_saliency_wm)
 # cv2.imshow('Saturation Weight (Input1)', input1_saturation_wm)
 
-# cv2.imshow('Input2 (Normalized Unsharp Masking)', input2)
+cv2.imshow('Input2 (Normalized Unsharp Masking)', input2)
 # cv2.imshow('Laplacian Contrast Weight (Input2)', input2_laplacian_wm)
 # cv2.imshow('Saliency Weight (Input2)', input2_saliency_wm)
 # cv2.imshow('Saturation Weight (Input2)', input2_saturation_wm)

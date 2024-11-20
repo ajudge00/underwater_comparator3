@@ -5,8 +5,8 @@ from .myutils import convert_dtype, ConvertFlags
 
 
 def num2(img: np.ndarray):
-    gaussian_filtered = cv2.GaussianBlur(img, (5, 5), 0)
-    diff = img - gaussian_filtered
+    gaussian_filtered = cv2.GaussianBlur(img, (15, 15), 0)
+    diff = cv2.subtract(img, gaussian_filtered)
 
     min_val = np.min(diff)
     max_val = np.max(diff)
@@ -16,7 +16,9 @@ def num2(img: np.ndarray):
     return (img + stretched_img) / 2
 
 
-def norm_unsharp_mask_matlab(img: np.ndarray, sigma=20, N=30, gain=0.8):
+def norm_unsharp_mask_matlab(img: np.ndarray, sigma=20, N=30, gain=1.0):
+    img = img.astype(np.float32) / 255.0
+
     Igauss = img.copy()
 
     for _ in range(N):
@@ -30,7 +32,7 @@ def norm_unsharp_mask_matlab(img: np.ndarray, sigma=20, N=30, gain=0.8):
         Norm_eq[:, :, n] = cv2.equalizeHist((Norm[:, :, n] * 255).astype(np.uint8)) / 255.0
 
     Isharp = (img + Norm_eq) / 2
-    return Isharp
+    return (Isharp * 255).astype(np.uint8)
 
 
 def norm_unsharp_mask(img: np.ndarray):
@@ -45,29 +47,18 @@ def norm_unsharp_mask(img: np.ndarray):
     :return: S
     """
 
-    img = (img * 255).astype(np.uint8)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    assert img.ndim == 3 and img.dtype == np.uint8 and 1 <= np.max(img) <= 255
 
-    gaussian_filtered = cv2.GaussianBlur(img, (5, 5), 0)
-    diff = cv2.absdiff(img, gaussian_filtered)
-    diff[:, :, 0] = cv2.normalize(diff[:, :, 0], None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+    gaussian_filtered = cv2.GaussianBlur(img, (15, 15), 0)  # Experiment with kernel size
 
-    img = cv2.cvtColor(img, cv2.COLOR_LAB2BGR)
-    return (img + cv2.cvtColor(diff, cv2.COLOR_LAB2BGR)) / 2
+    # Step 2: High-pass signal
+    diff = cv2.subtract(img, gaussian_filtered)  # Difference I - G ∗ I
 
+    # Step 3: Normalize the difference (histogram stretching)
+    min_val, max_val = diff.min(), diff.max()
+    diff = ((diff - min_val) * (255.0 / (max_val - min_val))).astype(np.uint8)
 
-def unsharp(image, sigma, strength):
-    image_mf = median_filter(image, sigma)
-    lap = cv2.Laplacian(image, cv2.CV_32F)
-    sharp = cv2.subtract(image, (cv2.multiply(strength, lap)))
+    # Step 4: Combine with original image and average
+    sharpened = ((img.astype(np.float32) + diff.astype(np.float32)) / 2.0).astype(np.uint8)
 
-    return sharp
-
-
-def unsharp_mask(img: np.ndarray, sigma, strength):
-    img_copy = img.copy()
-
-    for i in range(3):
-        img_copy[:, :, i] = unsharp(img[:, :, i], sigma, strength)
-
-    return img_copy
+    return sharpened
