@@ -28,6 +28,7 @@ def laplacian_contrast_weight(img: np.ndarray):
 
 
 def saliency_weight(img: np.ndarray):
+    # this is rly fckin cool but doesnt work properly
     assert img.ndim == 3 and img.dtype == np.uint8 and 1 <= np.max(img) <= 255
 
     img_lab = cv2.cvtColor(img, cv2.COLOR_BGR2Lab)
